@@ -1,0 +1,143 @@
+@top Program { statement* }
+
+@skip { space | LineComment }
+
+@precedence {
+  else,
+  collec,
+  trail,
+  unop,
+  times @left,
+  plus @left,
+  shift @left,
+  bitAnd @left,
+  bitOr @left,
+  bitXor @left,
+  cmp @left,
+  and @left,
+  or @left,
+  ternary @right
+}
+
+expression {
+  String |
+  Number |
+  none |
+  boolean |
+  Collection { "{" !collec commaSep<prop':' expression> "}" } |
+  Closure  { ( "(" commaSep<Param> ")" | Param ) Arrow ( expression | block ) } |
+  Call { expression !trail "(" commaSep<expression> ")" } |
+  Reference |
+  Subscriptor |
+  Variable |
+  Unop { !unop (ArithOp<'--' | '++' | '-' | '+'> | BitOp<'~'> | LogicOp<'!'>) expression } |
+  Binop {
+    expression !times ( ArithOp<"//" | "/" | "%" | "*"> ) expression |
+    expression !plus ( ArithOp<("+" | "-")>) expression |
+    expression !shift ( BitOp<(">>" | "<<")>) expression |
+    expression !bitAnd ( BitOp<"&"> ) expression |
+    expression !bitOr ( BitOp<"|"> ) expression |
+    expression !bitXor ( BitOp<"^"> ) expression |
+    expression !cmp ( CompareOp<("<=" | ">="| "<" | ">" | "==" | "!=")> ) expression |
+    expression !and ( LogicOp<"&&"> ) expression |
+    expression !or ( LogicOp<"||"> ) expression 
+  } |
+  Ternary { expression !ternary LogicOp<"?"> expression LogicOp<":"> expression } | 
+  ParenExpr
+}
+
+Reference { expression !trail "." Attribute }
+
+Subscriptor { expression !trail "[" expression "]" } 
+
+ParenExpr { "(" expression ")" }
+
+assignable {
+  Reference | Subscriptor | Variable
+}
+
+assign {
+  (assignable UpdateOp<('+=' | '-=' | '*=' | '//=' | '/=' | '%=' | '<<=' | '>>=' | '&=' | '^=' | '|=')> )+ expression | 
+  (assignable Equals)+ expression
+}
+
+statement {
+  Static { expression ';' } |
+  Assign { assign ';' } |
+  For { kw<'for'> '(' commaSep1<assign> ';' expression ';' commaSep1<(assign | expression)>  ')' blockOrStmt } |
+  While { kw<'while'> exprAndBlock } |
+  If { kw<'if'> exprAndBlock ~body !else (kw<'elif'> exprAndBlock ~body)* (kw<'else'> blockOrStmt)? } |
+  Delete { kw<'delete'> expression ';' } |
+  Return { kw<'return'> expression? ';' } |
+  Continue { kw<'continue'> ';' } |
+  Break { kw<'break'> ';' }
+}
+
+block {
+  '{' statement* '}'
+}
+
+blockOrStmt {
+  (block | statement)
+}
+
+exprAndBlock {
+  ParenExpr blockOrStmt
+}
+
+commaSep<content> {
+  "" | content ("," content?)*
+}
+
+commaSep1<content> {
+  content ("," content)*
+}
+
+kw<term> { @specialize[@name={term}]<name, term> }
+
+boolean { @specialize[@name=Boolean]<name, "true" | "false"> }
+
+none { @specialize[@name=None]<name, "none"> }
+
+Param { name ~id }
+Variable { name ~id }
+Property { name ~id }
+Attribute { name ~id }
+
+prop {
+  String | Property | Number
+}
+
+@tokens {
+  name {
+    $[a-zA-Z_$]$[a-zA-Z_$0-9]*
+  }
+  
+  String { '"' ![\n"]* '"'? | "'" ![\n']* "'"? }
+
+  Number {
+    (@digit+ '.'? @digit* | "." @digit+) ($[eE] $[+-]? @digit+)?
+  }
+
+  LineComment { "#" ![\n]* }
+
+  space { @whitespace+ }
+
+  Equals { "=" }
+  Arrow { "=>" }
+
+  ArithOp<expr> { expr }
+  LogicOp<expr> { expr }
+  BitOp<expr> { expr }
+  CompareOp<expr> { expr }
+  UpdateOp<expr> { expr }
+  
+
+  "(" ")"
+  "{" "}"
+  "[" "]"
+  "?" "." "," ";" ":"
+
+}
+
+@detectDelim

@@ -1,0 +1,280 @@
+# Boolean Atom
+
+true;
+false;
+
+==>
+
+Program(Static(Boolean), Static(Boolean))
+
+# String Atom
+
+" '  ";
+"someStrng$_1351";
+
+==>
+
+Program(Static(String), Static(String))
+
+# Number Atom
+
+1;
+.1;
+1.2e-10;
+
+==>
+
+Program(Static(Number), Static(Number), Static(Number))
+
+# None Atom
+
+none;
+
+==>
+
+Program(Static(None))
+
+# Variable Atom
+
+someVar;
+as1241;
+
+==>
+
+Program(Static(Variable), Static(Variable))
+
+# Collection Atom
+
+{ a: 1, 'str': 2, 3: 3 };
+{ a: 1};
+{};
+
+==>
+
+Program(Static(
+  Collection(
+    "{",
+      Property,":",Number,",",
+      String,":",Number,",",
+      Number,":",Number,"}"
+      )
+      ),
+      Static(Collection("{",Property,":",Number,"}")), Static(Collection("{","}")))
+
+
+# Closure Atom
+
+() => 1;
+a => 1;
+(a, b) => 1;
+(a) => { 1; };
+() => { a: 1, b : 2};
+
+
+==>
+
+Program(Static(Closure("(",")",Arrow,Number)),Static(Closure(Param,Arrow,Number)),Static(Closure("(",Param,",",Param,")",Arrow,Number)),Static(Closure("(",Param,")",Arrow,"{",Static(Number),"}")),Static(Closure("(",")",Arrow,Collection("{",Property,":",Number,",",Property,":",Number,"}"))))
+# Unary
+
+~1;
+++'string';
++false;
+
+==>
+
+Program(Static(Unop(BitOp,Number)),Static(Unop(ArithOp,String)),Static(Unop(ArithOp,Boolean)))
+
+
+# Binary
+
+1 // 1 + 2;
+2 + 2 >> 3;
+3 >> 3 & 4;
+4 & 4 | 5;
+5 | 5 ^ 6;
+6 ^ 6 <= 7;
+7 < 7 && 8;
+8 && 8 || 9;
+
+
+==>
+
+Program(
+  Static(Binop(Binop(Number,ArithOp,Number),ArithOp,Number)),
+  Static(Binop(Binop(Number,ArithOp,Number),BitOp,Number)),
+  Static(Binop(Binop(Number,BitOp,Number),BitOp,Number)),
+  Static(Binop(Binop(Number,BitOp,Number),BitOp,Number)),
+  Static(Binop(Binop(Number,BitOp,Number),BitOp,Number)),
+  Static(Binop(Binop(Number,BitOp,Number),CompareOp,Number)),
+  Static(Binop(Binop(Number,CompareOp,Number),LogicOp,Number)),
+  Static(Binop(Binop(Number,LogicOp,Number),LogicOp,Number))
+)
+
+# Reference
+
+a.bar;
+({}).foo;
+
+==>
+
+Program(
+  Static(Reference(Variable,".",Attribute)),
+  Static(Reference(ParenExpr("(",Collection("{","}"),")"),".",Attribute))
+)
+
+# Subscriptor
+
+a[1];
+({})[a];
+
+==>
+
+Program(
+  Static(Subscriptor(Variable,"[",Number,"]")),
+  Static(Subscriptor(ParenExpr("(",Collection("{","}"),")"),"[",Variable,"]"))
+)
+
+
+# Ternary
+
+1 ? true : 'str';
+1 + 2 ? (!3 ? 'str' : false) : true;
+
+==>
+
+Program(
+  Static(Ternary(Number,LogicOp,Boolean,LogicOp,String)),
+  Static(Ternary(Binop(Number,ArithOp,Number),LogicOp,ParenExpr("(",Ternary(Unop(LogicOp,Number),LogicOp,String,LogicOp,Boolean),")"),LogicOp,Boolean))
+)
+
+# Call
+
+a();
+a(1);
+a(2, 3);
+((x) => x)(4);
+
+
+==>
+
+Program(
+  Static(Call(Variable,"(",")")),
+  Static(Call(Variable,"(",Number,")")),
+  Static(Call(Variable,"(",Number,",",Number,")")),
+  Static(Call(ParenExpr("(",Closure("(",Param,")",Arrow,Variable),")"),"(",Number,")")))
+
+# Static
+
+1;
+
+==>
+
+Program(
+  Static(Number)
+)
+
+# Assignment
+
+a = 1;
+a.b = 1;
+a[1] = 1;
+a = b[2] = 2;
+a += 1;
+a.t //= 2;
+a /= 3;
+
+==>
+
+Program(
+  Assign(Variable,Equals,Number,";"),
+  Assign(Reference(Variable,".",Attribute),Equals,Number,";"),
+  Assign(Subscriptor(Variable,"[",Number,"]"),Equals,Number,";"),
+  Assign(Variable,Equals,Subscriptor(Variable,"[",Number,"]"),Equals,Number,";"),
+  Assign(Variable,UpdateOp,Number,";"),
+  Assign(Reference(Variable,".",Attribute),UpdateOp,Number,";"),
+  Assign(Variable,UpdateOp,Number,";")
+)
+
+# For 
+
+for (i = 0; true; 1) 1;
+for( i = j = 0, k = 10; k > 0; ++i, --k) { a = 1; b = 2; }
+
+==>
+
+Program(
+  For(for,"(",Variable,Equals,Number,Boolean,Number,")", Static(Number)),
+  For(for,"(",Variable,Equals,Variable,Equals,Number,",",Variable,Equals,Number,Binop(Variable,CompareOp,Number),Unop(ArithOp,Variable),",",Unop(ArithOp,Variable),")",
+  "{",Assign(Variable,Equals,Number),Assign(Variable,Equals,Number),"}")
+)
+
+# While
+
+while(true) 1;
+while(1) { a = 1; }
+
+==>
+
+Program(
+  While(while,ParenExpr("(",Boolean,")"),Static(Number,";")),
+  While(while,ParenExpr("(",Number,")"),"{",Assign(Variable,Equals,Number,";"),"}")
+)
+
+# If
+
+if (true) { a = 1 ; } 
+if (false) { a = 2;} else { a = 3; }
+if (false) 1; elif (true) { a = 4; } else a = 5;
+
+==>
+
+Program(
+  If(if,ParenExpr("(",Boolean,")"),"{",Assign(Variable,Equals,Number,";"),"}"),
+  If(if,ParenExpr("(",Boolean,")"),"{",Assign(Variable,Equals,Number,";"),"}",else,"{",Assign(Variable,Equals,Number,";"),"}"),
+  If(if,ParenExpr("(",Boolean,")"),Static(Number,";"),elif,ParenExpr("(",Boolean,")"),"{",Assign(Variable,Equals,Number,";"),"}",else,Assign(Variable,Equals,Number,";"))
+)
+
+
+# Delete
+
+delete 1;
+delete a['1'];
+delete {}.a;
+delete a.a;
+
+
+==>
+
+Program(
+  Delete(delete,Number,";"),
+  Delete(delete,Subscriptor(Variable,"[",String,"]"),";"),
+  Delete(delete,Reference(Collection("{","}"),".",Attribute),";"),
+  Delete(delete,Reference(Variable,".",Attribute),";")
+)
+
+# Return
+
+return 1;
+return;
+
+==> 
+Program(
+  Return(return,Number,";"),
+  Return(return,";")
+)
+
+# Continue
+
+continue;
+
+==> 
+
+Program(Continue(continue))
+
+# Break
+
+break;
+
+==> 
+
+Program(Break(break))
