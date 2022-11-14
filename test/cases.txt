@@ -118,8 +118,8 @@ a.bar;
 ==>
 
 Program(
-  Static(Reference(Variable,".",Attribute)),
-  Static(Reference(ParenExpr("(",Collection("{","}"),")"),".",Attribute))
+  Static(Reference(Variable,".",Property)),
+  Static(Reference(ParenExpr("(",Collection("{","}"),")"),".",Property))
 )
 
 # Subscriptor
@@ -187,11 +187,11 @@ a /= 3;
 
 Program(
   Assign(Variable,Equals,Number,";"),
-  Assign(Reference(Variable,".",Attribute),Equals,Number,";"),
+  Assign(Reference(Variable,".",Property),Equals,Number,";"),
   Assign(Subscriptor(Variable,"[",Number,"]"),Equals,Number,";"),
   Assign(Variable,Equals,Subscriptor(Variable,"[",Number,"]"),Equals,Number,";"),
   Assign(Variable,UpdateOp,Number,";"),
-  Assign(Reference(Variable,".",Attribute),UpdateOp,Number,";"),
+  Assign(Reference(Variable,".",Property),UpdateOp,Number,";"),
   Assign(Variable,UpdateOp,Number,";")
 )
 
@@ -248,8 +248,8 @@ delete a.a;
 Program(
   Delete(delete,Number,";"),
   Delete(delete,Subscriptor(Variable,"[",String,"]"),";"),
-  Delete(delete,Reference(Collection("{","}"),".",Attribute),";"),
-  Delete(delete,Reference(Variable,".",Attribute),";")
+  Delete(delete,Reference(Collection("{","}"),".",Property),";"),
+  Delete(delete,Reference(Variable,".",Property),";")
 )
 
 # Return

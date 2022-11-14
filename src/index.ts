@@ -1,5 +1,5 @@
 import {parser} from "./syntax.grammar"
-import {LRLanguage, LanguageSupport, indentNodeProp, foldNodeProp, foldInside} from "@codemirror/language"
+import {LRLanguage, LanguageSupport, indentNodeProp, foldNodeProp, foldInside, delimitedIndent} from "@codemirror/language"
 import {styleTags, tags as t} from "@lezer/highlight"
 import {completeFromList, completeAnyWord } from "@codemirror/autocomplete"
 
@@ -8,17 +8,19 @@ export const scopescriptLanguage = LRLanguage.define({
   parser: parser.configure({
     props: [
       indentNodeProp.add({
-        Application: context => context.column(context.node.from) + context.unit
+        Application: delimitedIndent({closing: ")", align: false}),
+      }),
+      indentNodeProp.add({
+        Application: delimitedIndent({closing: "}", align: false}),
       }),
       foldNodeProp.add({
         Application: foldInside
       }),
       styleTags({
         "for while if elif else return delete break continue": t.controlKeyword,
-        Param: t.namespace,
+        Param: t.special(t.variableName),
         Variable: t.variableName,
         Property: t.propertyName,
-        Attribute: t.attributeName,
         Boolean: t.bool,
         String: t.string,
         Number: t.number,
@@ -36,18 +38,18 @@ export const scopescriptLanguage = LRLanguage.define({
         "{ }": t.brace,
         "[ ]": t.squareBracket,
         ".": t.derefOperator,
-        ", ;": t.separator,
+        ", ; :": t.separator,
       })
     ]
   }),
   languageData: {
     commentTokens: {line: "#"},
-    
   }
 })
 
-export const completion = scopescriptLanguage.data.of({
-  autocomplete: [completeFromList([
+
+const completeList = scopescriptLanguage.data.of({
+  autocomplete: completeFromList([
     {label: "if", type: "keyword"},
     {label: "elif", type: "keyword"},
     {label: "else", type: "keyword"},
@@ -67,9 +69,13 @@ export const completion = scopescriptLanguage.data.of({
     {label: "num", type: "function"},
     {label: "str", type: "function"},
     {label: "bool", type: "function"},
-  ]), completeAnyWord]
+  ])
+})
+
+const completeAny = scopescriptLanguage.data.of({
+  autocomplete: completeAnyWord
 })
 
 export function scopescript() {
-  return new LanguageSupport(scopescriptLanguage, [completion]);
+  return new LanguageSupport(scopescriptLanguage, [completeList, completeAny])
 }

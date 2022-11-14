@@ -46,7 +46,7 @@ expression {
   ParenExpr
 }
 
-Reference { expression !trail "." Attribute }
+Reference { expression !trail "." Property }
 
 Subscriptor { expression !trail "[" expression "]" } 
 
@@ -102,7 +102,6 @@ none { @specialize[@name=None]<name, "none"> }
 Param { name ~id }
 Variable { name ~id }
 Property { name ~id }
-Attribute { name ~id }
 
 prop {
   String | Property | Number
